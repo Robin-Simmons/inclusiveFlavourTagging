@@ -15,10 +15,10 @@ import argparse
 
 import modelDefinition
 
-from ift_tf_2.training.dataGenerator import createSplitGenerators
+from ift.training.dataGenerator import createSplitGenerators
 
-from ift_tf_2.utils.utils import decision_and_mistag, saveModel, exportForCalibration
-from ift_tf_2.utils.plotUtils import makeTrainingPlots
+from ift.utils.utils import decision_and_mistag, saveModel, exportForCalibration
+from ift.utils.plotUtils import makeTrainingPlots
 
 TRACK_SHAPE = (100, 18)
 
