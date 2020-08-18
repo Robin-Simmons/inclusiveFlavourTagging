@@ -3,9 +3,9 @@ Train a simple RNN model for Inclusive Flavour Tagging using track information.
 - Using DataGenerator class to stream data to the GPU, to avoid storing loads of data in RAM
 - No transformations on data are done in this part now - these are all done per-batch in DataGenerator
 """
-
-__author__ = "Daniel O'Hanlon <daniel.ohanlon@cern.ch>"
-
+"""
+Apply clustering compression to trained model
+"""
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
@@ -13,12 +13,12 @@ from sklearn.metrics import roc_auc_score
 
 import argparse
 import time
-from ift_tf_2.training import modelDefinition
+from ift.training import modelDefinition
 
-from ift_tf_2.training.dataGenerator import createSplitGenerators
+from ift.training.dataGenerator import createSplitGenerators
 
-from ift_tf_2.utils.utils import decision_and_mistag, saveModel, exportForCalibration
-from ift_tf_2.utils.plotUtils import makeTrainingPlots
+from ift.utils.utils import decision_and_mistag, saveModel, exportForCalibration
+from ift.utils.plotUtils import makeTrainingPlots
 import os
 TRACK_SHAPE = (100, 18)
 
