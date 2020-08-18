@@ -1,16 +1,20 @@
+"""
+Run QAT on a convolutional model. There is also a function for fine tuning an existing model
+"""
+
 import numpy as np
 import time
 import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot
 import ift.training.modelDefinition
 import tensorflow as tf
-from ift_tf_2.training.dataGenerator import createSplitGenerators, DataGenerator
-from ift_tf_2.conv import convDefinition
-from ift_tf_2.utils.utils import decision_and_mistag, saveModel, exportForCalibration
-from ift_tf_2.utils.plotUtils import makeTrainingPlots, makeTrainingPlotsTF2
+from ift.training.dataGenerator import createSplitGenerators, DataGenerator
+from ift.conv import convDefinition
+from ift.utils.utils import decision_and_mistag, saveModel, exportForCalibration
+from ift.utils.plotUtils import makeTrainingPlots, makeTrainingPlotsTF2
 import argparse
 from sklearn.metrics import roc_auc_score
-import ift_tf_2.conv.convDefinition
+import ift.conv.convDefinition
 import matplotlib.pyplot as plt
 LastValueQuantizer = tfmot.quantization.keras.quantizers.LastValueQuantizer
 MovingAverageQuantizer = tfmot.quantization.keras.quantizers.MovingAverageQuantizer
@@ -115,11 +119,13 @@ def quant_aware_train(args):
     
     generatorOptions['batchSize'] = args.batchSize
     generatorOptions['useMultiprocessing'] = args.useMultiprocessing
+    # Quantisation doesn't support sigmoid activations (yet) and so set from_logits = True
     quant_aware_model.compile(optimizer = "adam", loss = keras.losses.BinaryCrossentropy(from_logits=True), metrics = ["accuracy"])
     genTrain, genValidation, genTest = createSplitGenerators(args.inputFiles,
                                                                  generatorOptions,
                                                                  shuffle = args.shuffle or args.shuffleChunks,
                                                                  shuffleChunks = args.shuffleChunks)
+    
     quant_aware_model.fit_generator(generator = genTrain,
                             validation_data = genValidation,
                             use_multiprocessing = args.useMultiprocessing,
@@ -130,6 +136,7 @@ def quant_aware_train(args):
     y_test = genTest.getTags()
 
     # Can use the generators for prediction too, but need to ensure that there is no shuffling wrt the above
+    # Sigmoids needed to ensure outputs are in [0,1]
     y_out_train = keras.activations.sigmoid(quant_aware_model.predict_generator(genTrain))
     y_out_test = keras.activations.sigmoid(quant_aware_model.predict_generator(genTest))
 
@@ -166,6 +173,7 @@ def quant_aware_tune(args):
     
     generatorOptions['batchSize'] = args.batchSize
     generatorOptions['useMultiprocessing'] = args.useMultiprocessing
+    # Quantisation doesn't support sigmoid activations (yet) and so set from_logits = True
     quant_aware_model.compile(optimizer = "adam", loss = keras.losses.BinaryCrossentropy(from_logits=True), metrics = ["accuracy"])
     genTrain, genValidation, genTest = createSplitGenerators(args.inputFiles,
                                                                  generatorOptions,
@@ -183,8 +191,8 @@ def quant_aware_tune(args):
     # Can use the generators for prediction too, but need to ensure that there is no shuffling wrt the above
     y_out_train = quant_aware_model.predict_generator(genTrain)
     y_out_test = quant_aware_model.predict_generator(genTest)
-    plt.hist(y_out_test, 40)
-    plt.savefig("output_hist_int.pdf")
+    
+    #needed to ensure outputs are in [0,1]
     y_out_train = keras.activations.sigmoid(y_out_train)
     y_out_test = keras.activations.sigmoid(y_out_test)
 
@@ -193,47 +201,8 @@ def quant_aware_tune(args):
 
     print(('ROC Train:', rocAUC_train))
     print(('ROC Test:', rocAUC_test))
-    return quant_aware_model, qat_history
+    return quant_aware_model
 
-def export_history_graph(args, qat_history):
-    parse = [qat_history.history["loss"], qat_history.history["val_loss"], qat_history.history["accuracy"],  qat_history.history["val_accuracy"]]
-    np.savetxt("{}_history_qat.txt".format(args.modelName), parse, delimiter = ",")
-    train_history = np.loadtxt("{}_history.txt".format(args.modelName), delimiter = ",")
-    train_loss = train_history[0]
-    train_val_loss = train_history[1]
-    train_acc = train_history[2]
-    train_val_acc = train_history[3]
-    
-    qat_loss     = qat_history.history["loss"]
-    qat_val_loss = qat_history.history["val_loss"]
-    qat_acc      = qat_history.history["accuracy"]
-    qat_val_acc  = qat_history.history["val_accuracy"]
-    loss = np.concatenate([train_loss, qat_loss])
-    val_loss = np.concatenate([train_val_loss, qat_val_loss])
-    acc = np.concatenate([train_acc, qat_acc])
-    val_acc = np.concatenate([train_val_acc, qat_val_acc])
-
-    fig = plt.figure(figsize = (12,9))
-    ax = fig.add_subplot(111)
-    plotdir = args.outputDir
-    plt.plot(loss, lw = 1.0)
-    plt.plot(val_loss, lw = 1.0)
-    plt.axvline(x = len(train_loss), lw = 1.0)
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.savefig(plotdir + 'loss-' + args.modelName + '.pdf')
-    plt.clf()
-
-    fig = plt.figure(figsize = (12,9))
-    ax = fig.add_subplot(111)
-
-    plt.plot(acc, lw = 1.0)
-    plt.plot(val_acc, lw = 1.0)
-    plt.axvline(x = len(train_loss), lw = 1.0)
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
-    plt.savefig(plotdir + 'acc-' + args.modelName + '.pdf')
-    plt.clf()
 
 def evalModel(args, model, forceCPUTrue):
     #tf-1.X
