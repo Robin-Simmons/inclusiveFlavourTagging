@@ -16,12 +16,12 @@ import argparse
 import numpy as np
 import time
 import pickle
-import ift_tf_2.conv.convDefinition as convDefinition
+from ift import convDefinition
 
-from ift_tf_2.training.dataGenerator import createSplitGenerators, DataGenerator
+from ift.training.dataGenerator import createSplitGenerators, DataGenerator
 
-from ift_tf_2.utils.utils import decision_and_mistag, saveModel, exportForCalibration
-from ift_tf_2.utils.plotUtils import makeTrainingPlotsTF2
+from ift.utils.utils import decision_and_mistag, saveModel, exportForCalibration
+from ift.utils.plotUtils import makeTrainingPlotsTF2
 
 TRACK_SHAPE = (100, 18)
 
