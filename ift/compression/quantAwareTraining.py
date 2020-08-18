@@ -14,7 +14,7 @@ from ift.utils.utils import decision_and_mistag, saveModel, exportForCalibration
 from ift.utils.plotUtils import makeTrainingPlots, makeTrainingPlotsTF2
 import argparse
 from sklearn.metrics import roc_auc_score
-import ift.conv.convDefinition
+import ift.training.convDefinition
 import matplotlib.pyplot as plt
 LastValueQuantizer = tfmot.quantization.keras.quantizers.LastValueQuantizer
 MovingAverageQuantizer = tfmot.quantization.keras.quantizers.MovingAverageQuantizer
