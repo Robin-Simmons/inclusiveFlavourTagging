@@ -1,5 +1,5 @@
 """
-Train a simple RNN model for Inclusive Flavour Tagging using track information.
+Train a transformer model for Inclusive Flavour Tagging using track information.
 - Using DataGenerator class to stream data to the GPU, to avoid storing loads of data in RAM
 - No transformations on data are done in this part now - these are all done per-batch in DataGenerator
 """
@@ -18,10 +18,10 @@ import time
 
 import transformerDefinition
 
-from ift_tf_2.training.dataGenerator import createSplitGenerators, DataGenerator
+from ift.training.dataGenerator import createSplitGenerators, DataGenerator
 
-from ift_tf_2.utils.utils import decision_and_mistag, saveModel, exportForCalibration
-from ift_tf_2.utils.plotUtils import makeTrainingPlotsTF2
+from ift.utils.utils import decision_and_mistag, saveModel, exportForCalibration
+from ift.utils.plotUtils import makeTrainingPlotsTF2
 
 TRACK_SHAPE = (100, 18)
 
