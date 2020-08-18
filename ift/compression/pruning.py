@@ -1,10 +1,7 @@
 """
-Train a simple RNN model for Inclusive Flavour Tagging using track information.
-- Using DataGenerator class to stream data to the GPU, to avoid storing loads of data in RAM
-- No transformations on data are done in this part now - these are all done per-batch in DataGenerator
+Train and prune a simple RNN. Training and pruning are split into two functions, rather than using scheduling
+this allows control over the learning rate
 """
-
-__author__ = "Daniel O'Hanlon <daniel.ohanlon@cern.ch>"
 
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import Adam
@@ -13,12 +10,12 @@ from sklearn.metrics import roc_auc_score
 
 import argparse
 import time
-from ift_tf_2.training import modelDefinition
+from ift.training import modelDefinition
 
-from ift_tf_2.training.dataGenerator import createSplitGenerators
+from ift.training.dataGenerator import createSplitGenerators
 
-from ift_tf_2.utils.utils import decision_and_mistag, saveModel, exportForCalibration
-from ift_tf_2.utils.plotUtils import makeTrainingPlots
+from ift.utils.utils import decision_and_mistag, saveModel, exportForCalibration
+from ift.utils.plotUtils import makeTrainingPlots
 import os
 TRACK_SHAPE = (100, 18)
 
@@ -102,7 +99,7 @@ def train(args):
     exportForCalibration(y_test, y_out_test, args.outputDir)
     return model, history
 
-def prune(model, args, finalSparsity):
+def prune(model, args):
     import tensorflow_model_optimization as tfmot 
     # Now controls host RAM usage too -> optimise for GPU/host RAM and execution speed
     generatorOptions['batchSize'] = args.batchSize
@@ -116,7 +113,7 @@ def prune(model, args, finalSparsity):
 
     pruning_params = {"pruning_schedule" :
                       tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=args.startSparsity,
-                                                                   final_sparsity=finalSparsity,
+                                                                   final_sparsity=args.finalSparsity,
                                                                    begin_step=0,
                                                                    end_step=args.epochs*args.batchSize)
     }
@@ -158,8 +155,8 @@ def prune(model, args, finalSparsity):
     rocAUC_train = roc_auc_score(y_train, y_out_train)
     rocAUC_test = roc_auc_score(y_test, y_out_test)
 
-    print('Prune {}  ROC Train: {}'.format(finalSparsity, rocAUC_train))
-    print('Prune {} ROC Test: {}'.format(finalSparsity, rocAUC_test))
+    print('Prune ROC Train: {}'.format(rocAUC_train))
+    print('Prune ROC Test: {}'.format(rocAUC_test))
     stripped_model = tfmot.sparsity.keras.strip_pruning(prune_model)    
     #makeTrainingPlots(model, plotdir = args.outputDir, modelName = args.modelName)
     #makeTrainingPlots(model, plotdir = args.outputDir, modelName = args.modelName)
@@ -212,26 +209,11 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import numpy as np
     time_inference(model, "un pruned")
-    for i in range(12,20):
-        print("training with final sparsity {}".format(i/20))
-        prune_model, prune_history = prune(model, args, i/20)
-        time_inference(prune_model, "pruned")
-    #acc = history.history["accuracy"]
-    #val_acc = history.history["val_accuracy"]
-    #prune_acc = prune_history.history["accuracy"]
-    #prune_val_acc = prune_history.history["val_accuracy"]
-    #acc_total = np.concatenate([acc, prune_acc])
-    #val_acc_total = np.concatenate([val_acc, prune_val_acc])
-    #fig = plt.figure(figsize = (12,9))
-    #ax = fig.add_subplot(111)
-    #plotdir = args.outputDir
-    #plt.plot(acc_total, lw = 1.0)
-    #plt.plot(val_acc_total, lw = 1.0)
-    #plt.axvline(x = len(acc), lw = 1.0)
-    #plt.xlabel("Epoch")
-    #plt.ylabel("Accuracy")
-    #plt.savefig(plotdir + 'acc-' + args.modelName + '.pdf')
-    #plt.clf()
+    
+        
+    prune_model, prune_history = prune(model, args)
+    time_inference(prune_model, "pruned")
+    
     
         
     print(args) 
