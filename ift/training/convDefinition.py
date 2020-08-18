@@ -1,8 +1,6 @@
 import numpy as np
 
 import tensorflow.keras as keras
-from tensorflow.keras import backend as K
-from tensorflow import dtypes, matmul, Tensor, tensordot, transpose
 import tensorflow_model_optimization as tfmot 
 
 LastValueQuantizer = tfmot.quantization.keras.quantizers.LastValueQuantizer
@@ -40,6 +38,7 @@ class DefaultDenseQuantizeConfig(tfmot.quantization.keras.QuantizeConfig):
     def get_config(self):
       return {}
 
+# Unused
 class CustomDenseQuantizeConfig(tfmot.quantization.keras.QuantizeConfig):
     def __init__(self, bits = 8):
         self.bits = bits
@@ -82,17 +81,6 @@ def quant_annotated_cnn2(trackShape, args):
     drop2 = quantize_annotate_layer(keras.layers.Dropout(0.6), DefaultDenseQuantizeConfig(args.quantBits))(dense)
     out = quantize_annotate_layer(keras.layers.Dense(1), DefaultDenseQuantizeConfig(args.quantBits))(drop2)
     return keras.models.Model(inputs = inputFeatures, outputs = out)
-
-def quant_annotated_cnn_no_dropout(trackShape, args): 
-    inputFeatures = keras.layers.Input(trackShape)
-    timeDist = quantize_annotate_layer(keras.layers.Dense(args.nHidden, activation = 'relu', input_shape = trackShape), DefaultDenseQuantizeConfig(args.quantBits))(inputFeatures)
-    conv1 = quantize_annotate_layer(keras.layers.Conv1D(filters = args.filter1, kernel_size = args.kernel1, activation = "relu"), DefaultDenseQuantizeConfig(args.quantBits))(timeDist)
-    conv2 = quantize_annotate_layer(keras.layers.Conv1D(filters = args.filter2, kernel_size = args.kernel2, activation = "relu"), DefaultDenseQuantizeConfig(args.quantBits))(conv1)
-    flatten = keras.layers.Flatten()(conv2)
-    dense = quantize_annotate_layer(keras.layers.Dense(args.nHidden, activation = "relu"), DefaultDenseQuantizeConfig(args.quantBits))(flatten)
-    out = quantize_annotate_layer(keras.layers.Dense(1), DefaultDenseQuantizeConfig(args.quantBits))(dense)
-    return keras.models.Model(inputs = inputFeatures, outputs = out)
-
 
 def quant_annotated_cnn_deep_conv(trackShape, args): 
     inputFeatures = keras.layers.Input(trackShape)
