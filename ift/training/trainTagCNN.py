@@ -16,7 +16,7 @@ import argparse
 import numpy as np
 import time
 import pickle
-from ift import convDefinition
+from ift import cnnDefinition
 
 from ift.training.dataGenerator import createSplitGenerators, DataGenerator
 
