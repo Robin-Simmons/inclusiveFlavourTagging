@@ -10,9 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score
 
-from ift_tf_2.training.dataGenerator import createSplitGenerators
-from ift_tf_2.utils.utils import decision_and_mistag, saveModel, exportForCalibration
-from ift_tf_2.utils.plotUtils import makeTrainingPlots
+from ift.training.dataGenerator import createSplitGenerators
 
 __author__ = "Robin Simmons <rs17751@bristol.ac.uk>"
 
