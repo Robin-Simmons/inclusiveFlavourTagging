@@ -1,3 +1,5 @@
+""" Functional definitions for attention based RNNs, along with custom self attention layers """
+
 import numpy as np
 
 import tensorflow.keras as keras
